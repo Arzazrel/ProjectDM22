@@ -328,7 +328,7 @@ def btn_check_classify(alpha, delta, u, g, r, i, z):
 # method that classify the new object passed as parameter and write the classes in the view
 def classify_new_obj(new_obj):
     # text to visualize to notify the work
-    classify_text.set("Working...")
+    classify_text.set(": Working...")
     classify_label = Label(features_input_frame, textvariable=classify_text)
     classify_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
     
