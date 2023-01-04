@@ -65,26 +65,26 @@ class DB_connect:
                 data_query = (user,psw)
                 cursor.execute(query, data_query)
                 
+                # check if already exist this user
                 if cursor.rowcount != 0:
                     # close cursor
                     cursor.close()
-                    
                     # operation failed
                     result['status'] = "ERROR: credentials already used, please change and try again."
                     return result                    
-                else:
-                    # add new user
-                    add_user = ("INSERT INTO user (username, psw, admin) VALUES (%s, %s, %s)")
-                    data_user = (user,psw, 0) 
-                    cursor.execute(add_user, data_user)
-                    # Make sure data is committed to the database
-                    self.connection.commit()
-                    # close cursor
-                    cursor.close()
+                
+                # add new user
+                add_user = ("INSERT INTO user (username, psw, admin) VALUES (%s, %s, %s)")
+                data_user = (user,psw, 0) 
+                cursor.execute(add_user, data_user)
+                # Make sure data is committed to the database
+                self.connection.commit()
+                # close cursor
+                cursor.close()
                     
-                    # operation success
-                    result['status'] = "OK"
-                    return result
+                # operation success
+                result['status'] = "OK"
+                return result
             else:
                 result['status'] = "ERROR: there isn't connection to DB."
                 return result
@@ -122,6 +122,125 @@ class DB_connect:
                     # operation failed
                     result['status'] = "ERROR: there isn't user with these credentials."
                     return result
+            else:
+                result['status'] = "ERROR: there isn't connection to DB."
+                return result
+        except connector.Error as err:
+            result['status'] = "ERROR: {}".format(err)
+            return result
+    
+    # method for return a list of celestial body in according to userid
+    def ret_list_celestial_bodies(self, userid):
+        # dictionary that contain the result
+        result = {}
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # open cursor
+                cursor = self.connection.cursor(buffered=True)
+    
+                query = ("SELECT alpha, delta, u, g, r, i, z, class as classe FROM celestial_bodies WHERE observer_user = %s")
+                data_query = (userid,)
+                cursor.execute(query, data_query)
+                
+                # check if there is celestial bodies added by userid
+                if cursor.rowcount != 0:
+                    # result['data'] will be a list of vector
+                    result['data'] = []
+                    # scroll through the list returned by query and add to the result
+                    for (alpha, delta, u, g, r, i, z, classe) in cursor:
+                        # add current row to result['data']
+                        result['data'].append([alpha, delta, u, g, r, i, z, classe])
+                    
+                    # close cursor
+                    cursor.close()
+                    # operation success
+                    result['status'] = "OK"
+                    return result
+                else:
+                    # close cursor
+                    cursor.close()
+                    # operation failed
+                    result['status'] = "ERROR: there isn't celestial bodies added by the user."
+                    return result
+            else:
+                result['status'] = "ERROR: there isn't connection to DB."
+                return result
+        except connector.Error as err:
+            result['status'] = "ERROR: {}".format(err)
+            return result
+    
+    # method for insert a new celestial body
+    def insert_celestial_body(self, data_vector):
+        # dictionary that contain the result
+        result = {}
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # check data_vector must be a vector of 9 element
+                if len(data_vector) != 9:
+                    result['status'] = "ERROR: incorrect data passed."
+                    return result
+                # len of data_vector is ok
+                # open cursor
+                cursor = self.connection.cursor(buffered=True)
+                
+                # check if already exist this celestial body observed by same user in the DB
+                query = ("SELECT * FROM celestial_bodies WHERE alpha = %s AND delta = %s AND u = %s AND g = %s AND r = %s AND i = %s AND  z = %s AND class = %s AND observer_user = %s")
+                cursor.execute(query, data_vector)
+                # check if already exist
+                if cursor.rowcount != 0:
+                    # close cursor
+                    cursor.close()
+                    # operation failed
+                    result['status'] = "ERROR: you have already added this celestial body to the DB."
+                    return result          
+                
+                # insert data
+                add_celestial_bodies = ("INSERT INTO celestial_bodies (alpha, delta, u, g, r, i, z, class, observer_user) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)")
+                # execute insert
+                cursor.execute(add_celestial_bodies, data_vector)
+                # Make sure data is committed to the database
+                self.connection.commit()
+                # close cursor
+                cursor.close()
+                # operation success
+                result['status'] = "OK"
+                return result
+            else:
+                result['status'] = "ERROR: there isn't connection to DB."
+                return result
+        except connector.Error as err:
+            result['status'] = "ERROR: {}".format(err)
+            return result
+    
+    # method for delete a celestial body
+    def delete_celestial_body(self, data_vector):
+        # dictionary that contain the result
+        result = {}
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # check data_vector must be a vector of 9 element
+                if len(data_vector) != 9:
+                    result['status'] = "ERROR: incorrect data passed."
+                    return result
+                
+                # len of data_vector is ok
+                # open cursor
+                cursor = self.connection.cursor(buffered=True)
+                
+                delete_celestial_body = ("DELETE FROM celestial_bodies WHERE alpha = %s AND delta = %s AND u = %s AND g = %s AND r = %s AND i = %s AND z = %s AND class = %s AND observer_user = %s")
+                # execute delete
+                cursor.execute(delete_celestial_body, data_vector)
+                # Make sure data is committed to the database
+                self.connection.commit()
+                
+                # close cursor
+                cursor.close()
+                # operation success
+                result['status'] = "OK"
+                return result
             else:
                 result['status'] = "ERROR: there isn't connection to DB."
                 return result
@@ -169,9 +288,6 @@ class DB_connect:
         'data' -> contain any data to be returned by the method
 """
         
-#for (iduser, username, psw, admin) in cursor:
-#    print("username: ", username, " psw: ", psw, " admin: ",admin)
-
 #file_path = os.path.join(out_dir,'prova.csv') # Join one or more path components intelligently
 file_path = 'dataset\star_classification.csv'
 # test di prova
@@ -182,4 +298,29 @@ c.open_connect()
 #print(c.signin('alex', '')['status'])
 result = c.login('alex', '')
 print("Login status: ", result['status'])
+
+userid = 1
+result = c.ret_list_celestial_bodies(userid)
+print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
+#for elem in result['data']:
+#    print("Cel B : ", elem)
+
+
+# insert new object
+#new_object = [1,1,1,1,1,1,1,1,userid]
+#result = c.insert_celestial_body(new_object)
+#print("Status insert: ", result['status'])
+#result = c.insert_celestial_body(new_object)
+#print("Status insert: ", result['status'])
+#result = c.ret_list_celestial_bodies(userid)
+#print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
+#for elem in result['data']:
+#    print("Cel B : ", elem)
+# delete new_object
+#result = c.delete_celestial_body(new_object)
+#print("Status delete: ", result['status'])
+#result = c.ret_list_celestial_bodies(userid)
+#print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
+#for elem in result['data']:
+#    print("Cel B : ", elem)
 c.close_connect()
