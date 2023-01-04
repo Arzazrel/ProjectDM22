@@ -42,10 +42,92 @@ class DB_connect:
     
     # method to close connection
     def close_connect(self):
-        # check if there is a connection
-        if self.connection.is_connected():
-            # close connection
-            self.connection.close()
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # close connection
+                self.connection.close()
+        except connector.Error as err:
+            print("Something went wrong: {}".format(err))
+        
+    # method for adding a new user to DB, if the operation is successfull it will return OK by result['status'] otherwise a error mex
+    def signin(self, user, psw):
+        # dictionary that contain the result
+        result = {}
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # check if already exist a user with these credentials
+                # open cursor
+                cursor = self.connection.cursor(buffered=True)
+    
+                query = ("SELECT * FROM user WHERE username = %s AND psw = %s")
+                data_query = (user,psw)
+                cursor.execute(query, data_query)
+                
+                if cursor.rowcount != 0:
+                    # close cursor
+                    cursor.close()
+                    
+                    # operation failed
+                    result['status'] = "ERROR: credentials already used, please change and try again."
+                    return result                    
+                else:
+                    # add new user
+                    add_user = ("INSERT INTO user (username, psw, admin) VALUES (%s, %s, %s)")
+                    data_user = (user,psw, 0) 
+                    cursor.execute(add_user, data_user)
+                    # Make sure data is committed to the database
+                    self.connection.commit()
+                    # close cursor
+                    cursor.close()
+                    
+                    # operation success
+                    result['status'] = "OK"
+                    return result
+            else:
+                result['status'] = "ERROR: there isn't connection to DB."
+                return result
+        except connector.Error as err:
+            result['status'] = "ERROR: {}".format(err)
+            return result
+        
+    # method for login with a user to DB, if the operation is successfull it will return OK by result['status'] otherwise a error mex
+    def login(self, user, psw):
+        # dictionary that contain the result
+        result = {}
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                # check if already exist a user with these credentials
+                # open cursor
+                cursor = self.connection.cursor(buffered=True)
+    
+                query = ("SELECT * FROM user WHERE username = %s AND psw = %s")
+                data_query = (user,psw)
+                cursor.execute(query, data_query)
+                
+                # check the data received from DB
+                if cursor.rowcount != 0:
+                    result['data'] = cursor.fetchone()
+                    
+                    # close cursor
+                    cursor.close()
+                    # operation success
+                    result['status'] = "OK"
+                    return result
+                else:
+                    # close cursor
+                    cursor.close()
+                    # operation failed
+                    result['status'] = "ERROR: there isn't user with these credentials."
+                    return result
+            else:
+                result['status'] = "ERROR: there isn't connection to DB."
+                return result
+        except connector.Error as err:
+            result['status'] = "ERROR: {}".format(err)
+            return result
         
     """ -- method used in development to populate the DB --
     # method that add celestial bodies to DB mysql from a file csv, path passed by parameter 
@@ -79,7 +161,17 @@ class DB_connect:
         # close cursor
         cursor.close()
     """
+    
+"""
+    structure of the dictionary result returned by the methods
+    Result:
+        'state' -> indicates the success (with 'OK') or failure (with 'ERROR: ' plus error mex) of the operation
+        'data' -> contain any data to be returned by the method
+"""
         
+#for (iduser, username, psw, admin) in cursor:
+#    print("username: ", username, " psw: ", psw, " admin: ",admin)
+
 #file_path = os.path.join(out_dir,'prova.csv') # Join one or more path components intelligently
 file_path = 'dataset\star_classification.csv'
 # test di prova
@@ -87,4 +179,7 @@ c = DB_connect()
 c.set_parameter_conn('Alex', '', '127.0.0.1', 'dm_project_db')
 c.open_connect()
 #c.from_csv_to_DB(file_path)
+#print(c.signin('alex', '')['status'])
+result = c.login('alex', '')
+print("Login status: ", result['status'])
 c.close_connect()
