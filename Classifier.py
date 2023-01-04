@@ -69,45 +69,6 @@ class Classifier:
     # method that retur if the classifier is ready or not
     def classifier_is_ready(self):
         return self.ready
-            
-    
-        
-"""
-# read dataset from csv
-df = pd.read_csv('dataset\star_classification.csv')
-
-# preprocessing
-# remove useless column
-dfProc0 = df.drop(columns=['obj_ID','run_ID', 'rerun_ID','cam_col','field_ID','spec_obj_ID','plate','MJD','fiber_ID'])
-# remove redshift column
-dfReduced = dfProc0.drop(columns=['redshift'])
-# remove incorrect sample in position 79545 with values [224.00652611366,-0.624303881323656,-9999,-9999,18.1656,18.01675,-9999,"STAR"] 
-#print(dfReduced.loc[79543,:])
-dfPreprocessed = dfReduced.drop([79543])
-
-#print(dfPreprocessed)
-# array of training sample
-X = dfPreprocessed.iloc[:,[0,1,2,3,4,5,6]]
-print("X è :" , X)
-# array of target values
-Y = dfPreprocessed.loc[:,"class"]
-print("Y è :" , Y)
-
-# model
-classifier = RandomForestClassifier(n_estimators=100)
-
-# fit the model
-#classifier = classifier.fit(X, Y)
-classifier.fit(X.values, Y)
-
-# classifier score
-scores = cross_validate(classifier, X, Y, cv=10,n_jobs=-1)
-print(scores)
-print("punteggio del classificatore: ", scores['test_score'].mean())
-
-result = classifier.predict([[135.689107,32.494632,23.87882,22.27530,20.39501,19.16573,18.79371],])
-print(result)
-"""
 
 """
 # test functionality of functionality
@@ -118,9 +79,3 @@ new_object = [[135.689107,32.494632,23.87882,22.27530,20.39501,19.16573,18.79371
 print(c1.predict(new_object))
 print(c1.cross_validation_result())
 """
-
-#with open('mybinfl.bin','wb') as myflbin:
-#    myflbin.write(bytes([classifier]))
-    
-#plt.plot(df['redshift'], df['class'], 'o')
-#plt.show()
