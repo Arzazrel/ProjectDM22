@@ -11,6 +11,11 @@ from threading import Semaphore
 # import of my files
 import Classifier as Clf
 import DB_connect as DB_conn
+import hashlib
+
+"""
+
+"""
 
 # global values
 window = Tk()
@@ -67,18 +72,30 @@ def clean_frame_GUI(frame_elem):
 def btn_signin_clicked(username, psw):
     #check input
     if username and psw:
-        print("username: ", username, " psw: ", psw)
+        # encrypt psw with MDA5
+        password = hashlib.md5(psw.encode()).hexdigest()
         # send username and psw to server
-        
+        result = conn.signin(username, password)
         # checks passed 
-        # save username
-        user_info['username'] = username
-        
-        # update the error mex
-        error_text_initial_view.set("")
-        # update the state
-        status['state'] = "user_view"
-        current_view_to_visualise()
+        if result['status'] == "OK":
+            # save information of user
+            user_info['username'] = username
+            # result['data'] is in this form (iduser, username, psw, admin)
+            user_info['userid'] = result['data'][0]
+            if result['data'][3] == 1:
+                user_info['admin'] = True
+            else:
+                user_info['admin'] = False
+                
+            # update the error mex
+            error_text_initial_view.set("")
+            # update the state
+            status['state'] = "user_view"
+            current_view_to_visualise()
+        else:
+            # operation failed
+            # update the error mex
+            error_text_initial_view.set(result['status'])
     else:
         # set error text
         error_text_initial_view.set("Invalid username or psw, please try again.")
@@ -87,18 +104,30 @@ def btn_signin_clicked(username, psw):
 def btn_login_clicked(username, psw):
     #check input
     if username and psw:
-        print("username: ", username, " psw: ", psw)
+        # encrypt psw with MDA5
+        password = hashlib.md5(psw.encode()).hexdigest()
         # send username and psw to server
-        
+        result = conn.login(username, password)
         # checks passed 
-        # save username
-        user_info['username'] = username
-        
-        # update the error mex
-        error_text_initial_view.set("")
-        #update the state
-        status['state'] = "user_view"
-        current_view_to_visualise()
+        if result['status'] == "OK":
+            # save information of user
+            user_info['username'] = username
+            # result['data'] is in this form (iduser, username, psw, admin)
+            user_info['userid'] = result['data'][0]
+            if result['data'][3] == 1:
+                user_info['admin'] = True
+            else:
+                user_info['admin'] = False
+                
+            # update the error mex
+            error_text_initial_view.set("")
+            # update the state
+            status['state'] = "user_view"
+            current_view_to_visualise()
+        else:
+            # operation failed
+            # update the error mex
+            error_text_initial_view.set(result['status'])
     else:
         # set error text
         error_text_initial_view.set("Invalid username or psw, please try again.")
@@ -362,7 +391,18 @@ def classify_new_obj(new_obj):
         error_text_add_view.set("Classifier does not work, please try closing and reopening the program.")
     # release token
     clf_semaphore.release(1)
-
+    
+# ------------------------------------ methods interfacing with DB ------------------------------------
+# method for connecting to DB
+def conn_to_DB():
+    # set parameter for connection
+    conn.set_parameter_conn(parameter_conn['user'], parameter_conn['password'], parameter_conn['host'] , parameter_conn['database'])
+    # open connection and verify if there is an error
+    result = conn.open_connect()
+    if result['status'] != 'OK':
+        # visualize error in initial view
+        error_text_initial_view.set(result['status'] + "\nPlease close and reopen the application to try to solve the porblem.")
+        
 # ------------------------------------ main ------------------------------------        
 if __name__ == "__main__":
     window.title("Astreo")
@@ -376,7 +416,7 @@ if __name__ == "__main__":
     t.start()
     
     # at the start open the connection to DB
-    conn.set_parameter_conn(parameter_conn['user'], parameter_conn['password'], parameter_conn['host'] , parameter_conn['database'])
+    conn_to_DB()
     
         #window.update_idletasks()
         #window.update()

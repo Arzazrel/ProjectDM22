@@ -82,8 +82,8 @@ class DB_connect:
                 # open cursor
                 cursor = self.connection.cursor(buffered=True)
     
-                query = ("SELECT * FROM user WHERE username = %s AND psw = %s")
-                data_query = (user,psw)
+                query = ("SELECT * FROM user WHERE username = %s")
+                data_query = (user,)
                 cursor.execute(query, data_query)
                 
                 # check if already exist this user
@@ -100,9 +100,24 @@ class DB_connect:
                 cursor.execute(add_user, data_user)
                 # Make sure data is committed to the database
                 self.connection.commit()
+                
+                # take the userid of the user 
+                query = ("SELECT * FROM user WHERE username = %s AND psw = %s")
+                data_query = (user,psw)
+                cursor.execute(query, data_query)
+                
+                # check if already exist this user
+                if cursor.rowcount == 0:
+                    # close cursor
+                    cursor.close()
+                    # operation failed
+                    result['status'] = "ERROR: operation failed"
+                    return result          
+                
+                result['data'] = cursor.fetchone()
+                
                 # close cursor
                 cursor.close()
-                    
                 # operation success
                 result['status'] = "OK"
                 return result
@@ -309,9 +324,9 @@ class DB_connect:
         'data' -> contain any data to be returned by the method
         
     -- Correct sequence of methods
-        1 -
-        2 -
-        3 -
+        1 - create new DB_connect object
+        2 - set_parameter_conn(user, password, host, database)
+        3 - open_connect()
         4 -
 """
 """        
@@ -324,7 +339,7 @@ c.open_connect()
 #c.from_csv_to_DB(file_path)
 #print(c.signin('alex', '')['status'])
 result = c.login('alex', '')
-print("Login status: ", result['status'])
+print("Login status: ", result['status'], " userid: " ,result['data'][0])
 
 userid = 1
 result = c.ret_list_celestial_bodies(userid)
