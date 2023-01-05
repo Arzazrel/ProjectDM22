@@ -28,17 +28,23 @@ class DB_connect:
         
     # method to open connection
     def open_connect(self):
+        # dictionary that contain the result
+        result = {}
         # check if dictionary isn't empty
         if len(self.parameter_conn) != 0:
             try:
                 self.connection = connector.connect(user=self.parameter_conn['user'], password=self.parameter_conn['password'],host=self.parameter_conn['host'],database=self.parameter_conn['database'])
+                # operation success
+                result['status'] = "OK"
+                return result
             except connector.Error as err:
                 if err.errno == connector.errorcode.ER_ACCESS_DENIED_ERROR:
-                    print("Something is wrong with your user name or password")
+                    result['status'] = "ERROR: Something is wrong with your user name or password"
                 elif err.errno == connector.errorcode.ER_BAD_DB_ERROR:
-                    print("Database does not exist")
+                    result['status'] = "ERROR: Database does not exist"
                 else:
-                    print(err)
+                    result['status'] = err
+                return result
     
     # method to close connection
     def close_connect(self):
@@ -49,6 +55,17 @@ class DB_connect:
                 self.connection.close()
         except connector.Error as err:
             print("Something went wrong: {}".format(err))
+            
+    # method that return if the connection to DB is open (true) or close (false)
+    def is_conn(self):
+        try:
+            # check if there is a connection
+            if self.connection.is_connected():
+                return True
+            else:
+                return False
+        except connector.Error:
+            return False
         
     # method for adding a new user to DB, if the operation is successfull it will return OK by result['status'] otherwise a error mex
     def signin(self, user, psw):
@@ -287,7 +304,7 @@ class DB_connect:
         'state' -> indicates the success (with 'OK') or failure (with 'ERROR: ' plus error mex) of the operation
         'data' -> contain any data to be returned by the method
 """
-        
+"""        
 #file_path = os.path.join(out_dir,'prova.csv') # Join one or more path components intelligently
 file_path = 'dataset\star_classification.csv'
 # test di prova
@@ -304,7 +321,7 @@ result = c.ret_list_celestial_bodies(userid)
 print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
 #for elem in result['data']:
 #    print("Cel B : ", elem)
-
+"""
 
 # insert new object
 #new_object = [1,1,1,1,1,1,1,1,userid]
@@ -323,4 +340,4 @@ print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ott
 #print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
 #for elem in result['data']:
 #    print("Cel B : ", elem)
-c.close_connect()
+#c.close_connect()

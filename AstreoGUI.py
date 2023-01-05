@@ -10,6 +10,7 @@ from threading import Thread
 from threading import Semaphore
 # import of my files
 import Classifier as Clf
+import DB_connect as DB_conn
 
 # global values
 window = Tk()
@@ -25,6 +26,8 @@ clf = Clf.Classifier()
 clf_semaphore = Semaphore(1)
 # text that shows the class of the new object classified by classifier
 classify_text = StringVar()
+# object for the comunication to the DB
+conn = DB_conn.DB_connect()
 
 # methods
 # method that cleans GUI elements
@@ -32,6 +35,12 @@ def cleanGUI():
     list = window.grid_slaves()
     for l in list:
         l.destroy()
+# method for handling the closing of the window by the user
+def on_closing():
+    # close connection if is open
+    
+    # close window
+    window.destroy()
 
 # method that cleans GUI elements in a frame passeb by parameter
 def clean_frame_GUI(frame_elem):
@@ -344,7 +353,7 @@ def classify_new_obj(new_obj):
     # release token
     clf_semaphore.release(1)
 
-# ------------------------------------ main ------------------------------------
+# ------------------------------------ main ------------------------------------        
 if __name__ == "__main__":
     window.title("Astreo")
     window.geometry('600x600')
@@ -359,4 +368,6 @@ if __name__ == "__main__":
         
         #window.update_idletasks()
         #window.update()
+    # handle the window closing by the user
+    window.protocol("WM_DELETE_WINDOW", on_closing)
     window.mainloop()
