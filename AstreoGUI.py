@@ -6,6 +6,7 @@ This is a temporary script file.
 """
 import numpy as np
 from tkinter import *
+from  tkinter import ttk
 from threading import Thread
 from threading import Semaphore
 # import of my files
@@ -13,11 +14,7 @@ import Classifier as Clf
 import DB_connect as DB_conn
 import hashlib
 
-"""
-
-"""
-
-# global values
+# ------------------------------------  global values  ------------------------------------
 window = Tk()
 status = {'state' : 'initial' }        #indicate the view to be displayed by the application
     #the different status are:
@@ -47,8 +44,14 @@ error_text_initial_view.set('')
 # text that shows the error that occour in the add view
 error_text_add_view = StringVar()
 error_text_add_view.set('')
+# text that shows the error that occour in the user view
+error_text_user_view = StringVar()
+error_text_user_view.set('')
 
-# methods
+# ------------------------------------  methods  ------------------------------------
+
+# ------------------------------------ start: methods for GUI ------------------------------------
+
 # method that cleans GUI elements
 def cleanGUI():
     list = window.grid_slaves()
@@ -68,89 +71,6 @@ def clean_frame_GUI(frame_elem):
     for l in list:
         l.destroy()
         
-# method executed when the signin button is clicked
-def btn_signin_clicked(username, psw):
-    #check input
-    if username and psw:
-        # encrypt psw with MDA5
-        password = hashlib.md5(psw.encode()).hexdigest()
-        # send username and psw to server
-        result = conn.signin(username, password)
-        # checks passed 
-        if result['status'] == "OK":
-            # save information of user
-            user_info['username'] = username
-            # result['data'] is in this form (iduser, username, psw, admin)
-            user_info['userid'] = result['data'][0]
-            if result['data'][3] == 1:
-                user_info['admin'] = True
-            else:
-                user_info['admin'] = False
-                
-            # update the error mex
-            error_text_initial_view.set("")
-            # update the state
-            status['state'] = "user_view"
-            current_view_to_visualise()
-        else:
-            # operation failed
-            # update the error mex
-            error_text_initial_view.set(result['status'])
-    else:
-        # set error text
-        error_text_initial_view.set("Invalid username or psw, please try again.")
-    
-# method executed when the login button is clicked
-def btn_login_clicked(username, psw):
-    #check input
-    if username and psw:
-        # encrypt psw with MDA5
-        password = hashlib.md5(psw.encode()).hexdigest()
-        # send username and psw to server
-        result = conn.login(username, password)
-        # checks passed 
-        if result['status'] == "OK":
-            # save information of user
-            user_info['username'] = username
-            # result['data'] is in this form (iduser, username, psw, admin)
-            user_info['userid'] = result['data'][0]
-            if result['data'][3] == 1:
-                user_info['admin'] = True
-            else:
-                user_info['admin'] = False
-                
-            # update the error mex
-            error_text_initial_view.set("")
-            # update the state
-            status['state'] = "user_view"
-            current_view_to_visualise()
-        else:
-            # operation failed
-            # update the error mex
-            error_text_initial_view.set(result['status'])
-    else:
-        # set error text
-        error_text_initial_view.set("Invalid username or psw, please try again.")
-    
-# --- methods for change view
-# method for coming back to login/signin view, when the logout button is clicked
-def btn_logout_clicked():
-    #update the state
-    status['state'] = "initial"
-    current_view_to_visualise()
-    
-# method for goes to add_view
-def btn_add_view():
-    #update the state
-    status['state'] = "add_view"
-    current_view_to_visualise()
-    
-# method for goes to user_view
-def btn_user_view():
-    #update the state
-    status['state'] = "user_view"
-    current_view_to_visualise()
-    
 # method executed for change the view visualised
 def current_view_to_visualise():
     #print("eseguo current, status è : ",status)
@@ -210,6 +130,7 @@ def current_view_to_visualise():
         top_bar_frame = Frame(window, width=580, height=40, bg='grey')
         top_bar_frame.grid(row=0, column=0, padx=10, pady=0, sticky="nsew")
         top_bar_frame.grid_propagate(False)
+        
         # username label
         username_label = Label(top_bar_frame, text=username)
         username_label.grid(row=0, column=0, sticky="W", padx=10, pady=10)
@@ -224,20 +145,60 @@ def current_view_to_visualise():
         middle_frame.grid_propagate(False)
         
         # buttons
-        btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=btn_logout_clicked)
+        btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=lambda: fill_table_by_userid(1))  # userid = 1 is associated to admin, the global celestial bodies have admin as observer_user
         btn_vis_global.grid(row=1, column=0)
         
         btn_add = Button(middle_frame, text="Add celestial body", command=btn_add_view)
         btn_add.grid(row=0, column=1)
         
-        btn_vis_own = Button(middle_frame, text="visualise own list of celestial bodies", command=btn_logout_clicked)
+        btn_vis_own = Button(middle_frame, text="visualise own list of celestial bodies", command=lambda: fill_table_by_userid(user_info['userid']))
         btn_vis_own.grid(row=1, column=2)
         
         # - table frame : contain the list of celestial bodies
-        table_frame = Frame(window, width=580, height=460, bg='grey')
+        table_frame = Frame(window, width=580, height=400, bg='grey')
         table_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
         table_frame.grid_propagate(False)
         
+        #scrollbar
+        table_scroll = Scrollbar(table_frame)
+        table_scroll.pack(side=RIGHT, fill=Y)
+        global my_table
+        my_table = ttk.Treeview(table_frame,yscrollcommand=table_scroll.set, xscrollcommand =table_scroll.set)
+        #my_game.pack()
+        table_scroll.config(command=my_table.yview)
+        #table_scroll.config(command=my_game.xview)
+        #define columns of the table
+        my_table['columns'] = ('Right_asc', 'Declination', 'Ultraviolet', 'Green', 'Red', 'Near_Infrared', 'Infrared', 'Class')
+        # format of the columns -> 8 columns in 580 pixel, 72,5 for column
+        my_table.column("#0", width=0,  stretch=NO)
+        my_table.column("Right_asc",anchor=CENTER, width=70)
+        my_table.column("Declination",anchor=CENTER, width=70)
+        my_table.column("Ultraviolet",anchor=CENTER, width=70)
+        my_table.column("Green",anchor=CENTER, width=70)
+        my_table.column("Red",anchor=CENTER, width=70)
+        my_table.column("Near_Infrared",anchor=CENTER, width=70)
+        my_table.column("Infrared",anchor=CENTER, width=70)
+        my_table.column("Class",anchor=CENTER, width=70)
+        #Create Headings 
+        my_table.heading("#0",text="",anchor=CENTER)
+        my_table.heading("Right_asc",text="Right asc",anchor=CENTER)
+        my_table.heading("Declination",text="Declination",anchor=CENTER)
+        my_table.heading("Ultraviolet",text="Ultraviolet",anchor=CENTER)
+        my_table.heading("Green",text="Green",anchor=CENTER)
+        my_table.heading("Red",text="Red",anchor=CENTER)
+        my_table.heading("Near_Infrared",text="Near Infrared",anchor=CENTER)
+        my_table.heading("Infrared",text="Infrared",anchor=CENTER)
+        my_table.heading("Class",text="Class",anchor=CENTER)
+        
+        my_table.pack(fill=BOTH)
+        
+        # - frame to visualize error mex in add view
+        error_frame_user_view = Frame(window, width=580, height=60, bg='grey')
+        error_frame_user_view.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
+        error_frame_user_view.grid_propagate(False)
+        
+        error_label_user_view = Label(error_frame_user_view, textvariable=error_text_user_view, bg='grey')
+        error_label_user_view.grid(row=0, column=0, padx=10, pady=10)
     elif status['state'] == "add_view":
         # create variable for the GUI elements
         explainText = "In this screen you can add celestial bodies that you have observed.\nPut the parameters in the corresponding fields.\nPress the classification button to get a prediction of the type of celestial body observed: GALAXY, STAR, QSO.\nPress the add button to save."
@@ -325,6 +286,123 @@ def current_view_to_visualise():
         
         error_label_add_view = Label(error_frame_add_view, textvariable=error_text_add_view, bg='grey')
         error_label_add_view.grid(row=0, column=0, padx=10, pady=10)
+
+# ------------------------------------ end: methods for GUI ------------------------------------
+
+# ------------------------------------ start:  ------------------------------------
+# ------------------------------------ end:  ------------------------------------
+   
+# method that fill the table of the clelestial bodies in DB in according with userid  
+def fill_table_by_userid(userid):
+    # download the celestial bodies in the Db with observer_user equal to the parameter userid
+    # check if the userid is correct
+    if userid < 0:
+        error_text_user_view.set("ERROR: the userid passed is incorrect.")
+        return
+    
+    result = conn.ret_list_celestial_bodies(userid)
+    if result['status'] == "OK":
+        # check if there are a celestial bodies returned
+        if len(result['data']) == 0:
+            # there aren't
+            error_text_user_view.set("There aren't celestial bodies observed by the user.")
+        else:
+            # there are celestial bodies
+            i = 0
+            for elem in result['data']:
+                # add row to the table
+                my_table.insert(parent='',index='end',iid=i,text='',
+                                values=(elem[0],elem[1],elem[2],elem[3],elem[4],elem[5],elem[6],elem[7]))
+                # update value of i
+                i += 1
+            error_text_user_view.set("")
+    else:
+        # error
+        error_text_user_view.set(result['status'])
+     
+# method executed when the signin button is clicked
+def btn_signin_clicked(username, psw):
+    #check input
+    if username and psw:
+        # encrypt psw with MDA5
+        password = hashlib.md5(psw.encode()).hexdigest()
+        # send username and psw to server
+        result = conn.signin(username, password)
+        # checks passed 
+        if result['status'] == "OK":
+            # save information of user
+            user_info['username'] = username
+            # result['data'] is in this form (iduser, username, psw, admin)
+            user_info['userid'] = result['data'][0]
+            if result['data'][3] == 1:
+                user_info['admin'] = True
+            else:
+                user_info['admin'] = False
+                
+            # update the error mex
+            error_text_initial_view.set("")
+            # update the state
+            status['state'] = "user_view"
+            current_view_to_visualise()
+        else:
+            # operation failed
+            # update the error mex
+            error_text_initial_view.set(result['status'])
+    else:
+        # set error text
+        error_text_initial_view.set("Invalid username or psw, please try again.")
+    
+# method executed when the login button is clicked
+def btn_login_clicked(username, psw):
+    #check input
+    if username and psw:
+        # encrypt psw with MDA5
+        password = hashlib.md5(psw.encode()).hexdigest()
+        # send username and psw to server
+        result = conn.login(username, password)
+        # checks passed 
+        if result['status'] == "OK":
+            # save information of user
+            user_info['username'] = username
+            # result['data'] is in this form (iduser, username, psw, admin)
+            user_info['userid'] = result['data'][0]
+            if result['data'][3] == 1:
+                user_info['admin'] = True
+            else:
+                user_info['admin'] = False
+                
+            # update the error mex
+            error_text_initial_view.set("")
+            # update the state
+            status['state'] = "user_view"
+            current_view_to_visualise()
+        else:
+            # operation failed
+            # update the error mex
+            error_text_initial_view.set(result['status'])
+    else:
+        # set error text
+        error_text_initial_view.set("Invalid username or psw, please try again.")
+    
+# --- methods for change view
+# method for coming back to login/signin view, when the logout button is clicked
+def btn_logout_clicked():
+    #update the state
+    status['state'] = "initial"
+    current_view_to_visualise()
+    
+# method for goes to add_view
+def btn_add_view():
+    #update the state
+    status['state'] = "add_view"
+    current_view_to_visualise()
+    
+# method for goes to user_view
+def btn_user_view():
+    #update the state
+    status['state'] = "user_view"
+    current_view_to_visualise()
+    
         
 # ------------------------------------ methods for classifier ------------------------------------
 # method for make and fit the classifier in background
