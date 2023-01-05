@@ -59,9 +59,13 @@ class DB_connect:
     # method that return if the connection to DB is open (true) or close (false)
     def is_conn(self):
         try:
+            # check if connection is already initialised
+            if self.connection != None:
             # check if there is a connection
-            if self.connection.is_connected():
-                return True
+                if self.connection.is_connected():
+                    return True
+                else:
+                    return False
             else:
                 return False
         except connector.Error:
@@ -299,10 +303,16 @@ class DB_connect:
     """
     
 """
-    structure of the dictionary result returned by the methods
+    -- structure of the dictionary result returned by the methods
     Result:
         'state' -> indicates the success (with 'OK') or failure (with 'ERROR: ' plus error mex) of the operation
         'data' -> contain any data to be returned by the method
+        
+    -- Correct sequence of methods
+        1 -
+        2 -
+        3 -
+        4 -
 """
 """        
 #file_path = os.path.join(out_dir,'prova.csv') # Join one or more path components intelligently

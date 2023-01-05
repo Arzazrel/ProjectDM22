@@ -19,15 +19,29 @@ status = {'state' : 'initial' }        #indicate the view to be displayed by the
         # - initial : initial login or signin view
         # - user_view : user view
         # - add_view : view for add new celestial bodies, in this view the evaluator uses machine learning classifier
-user_info = {}  # dictionary contain the user info such as username, ...
+user_info = {}  # dictionary contain the user info such as username, userid, admin...
 # var that contain the object of the classifier
 clf = Clf.Classifier()
 # semaphore for work with classifier
 clf_semaphore = Semaphore(1)
-# text that shows the class of the new object classified by classifier
-classify_text = StringVar()
 # object for the comunication to the DB
 conn = DB_conn.DB_connect()
+# parameter for connection to DB
+parameter_conn = {}
+parameter_conn['user'] = 'Alex'
+parameter_conn['password'] = ''
+parameter_conn['host'] = '127.0.0.1'
+parameter_conn['database'] = 'dm_project_db'
+# -- variable text for label in GUI
+# text that shows the class of the new object classified by classifier
+classify_text = StringVar()
+classify_text.set(':')
+# text that shows the error that occour in the initial view
+error_text_initial_view = StringVar()
+error_text_initial_view.set('')
+# text that shows the error that occour in the add view
+error_text_add_view = StringVar()
+error_text_add_view.set('')
 
 # methods
 # method that cleans GUI elements
@@ -38,7 +52,8 @@ def cleanGUI():
 # method for handling the closing of the window by the user
 def on_closing():
     # close connection if is open
-    
+    if conn.is_conn():
+        conn.close_connect()
     # close window
     window.destroy()
 
@@ -58,14 +73,15 @@ def btn_signin_clicked(username, psw):
         # checks passed 
         # save username
         user_info['username'] = username
+        
+        # update the error mex
+        error_text_initial_view.set("")
         # update the state
         status['state'] = "user_view"
         current_view_to_visualise()
     else:
         # set error text
-        error_text = "Invalid username or psw, please try again."
-        # visualise error text in login/signin view
-        Label(bottom_frame_LS, text=error_text).grid(row=0, column=0, padx=10, pady=10)
+        error_text_initial_view.set("Invalid username or psw, please try again.")
     
 # method executed when the login button is clicked
 def btn_login_clicked(username, psw):
@@ -77,14 +93,15 @@ def btn_login_clicked(username, psw):
         # checks passed 
         # save username
         user_info['username'] = username
+        
+        # update the error mex
+        error_text_initial_view.set("")
         #update the state
         status['state'] = "user_view"
         current_view_to_visualise()
     else:
         # set error text
-        error_text = "Invalid username or psw, please try again."
-        # visualise error text in login/signin view
-        Label(bottom_frame_LS, text=error_text).grid(row=0, column=0, padx=10, pady=10)
+        error_text_initial_view.set("Invalid username or psw, please try again.")
     
 # --- methods for change view
 # method for coming back to login/signin view, when the logout button is clicked
@@ -145,12 +162,14 @@ def current_view_to_visualise():
         btn_test = Button(middle_frame, text="Login", command=lambda: btn_login_clicked(userNameInput.get(),userPswInput.get()))
         btn_test.grid(row=3,column=2)
         
-        # - bottom frame in the login/signin view
-        global bottom_frame_LS 
+        # - bottom frame in the login/signin view : contain the error text if occour an error
         bottom_frame_LS = Frame(window, width=580, height=180, bg='grey')
         bottom_frame_LS.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
         bottom_frame_LS.grid_propagate(False)
-    
+        
+        error_label_initial_view = Label(bottom_frame_LS, textvariable=error_text_initial_view, bg='grey')
+        error_label_initial_view.grid(row=0, column=0, padx=10, pady=10)
+        
     elif status['state'] == "user_view":
         # create variable for the GUI elements
         if user_info.get('username') != None:
@@ -203,7 +222,6 @@ def current_view_to_visualise():
         explain_text_label.grid(row=0, column=0, sticky="W", padx=0, pady=10)
         
         # - frame for the input field for the celestial body features
-        global features_input_frame 
         features_input_frame = Frame(window, width=580, height=405, bg='grey')
         features_input_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
         features_input_frame.grid_propagate(False)
@@ -262,7 +280,7 @@ def current_view_to_visualise():
         btn_classify = Button(features_input_frame, text="Classify", command=lambda: btn_check_classify(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get()))
         btn_classify.grid(row=9, column=0)
         # label for the result of classifier
-        result_classifier_label = Label(features_input_frame, text=": ")
+        result_classifier_label = Label(features_input_frame, textvariable=classify_text)
         result_classifier_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
         # botton to add the celestial body to DB
         btn_add_CB = Button(features_input_frame, text="Add", command=btn_logout_clicked)
@@ -271,11 +289,13 @@ def current_view_to_visualise():
         btn_userview = Button(features_input_frame, text="Back", command=btn_user_view)
         btn_userview.grid(row=11, column=3)
         
-        # - frame 
-        global error_frame_add_view
+        # - frame to visualize error mex in add view
         error_frame_add_view = Frame(window, width=580, height=60, bg='grey')
         error_frame_add_view.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
         error_frame_add_view.grid_propagate(False)
+        
+        error_label_add_view = Label(error_frame_add_view, textvariable=error_text_add_view, bg='grey')
+        error_label_add_view.grid(row=0, column=0, padx=10, pady=10)
         
 # ------------------------------------ methods for classifier ------------------------------------
 # method for make and fit the classifier in background
@@ -290,8 +310,6 @@ def make_classifier():
     
 # method for checking the input data of the new celestial body
 def btn_check_classify(alpha, delta, u, g, r, i, z):
-    # first clean the frame with text error
-    clean_frame_GUI(error_frame_add_view)
     # check input
     if alpha and delta and u and g and r and i and z:
         # convert the values
@@ -305,22 +323,18 @@ def btn_check_classify(alpha, delta, u, g, r, i, z):
             z = float(z)
         except ValueError:
             # set error text
-            error_text = "Invalid values entered, please try again."
-            # visualise error text in add view
-            Label(error_frame_add_view, text=error_text).grid(row=0, column=0, padx=5, pady=5)
+            error_text_add_view.set("Invalid values entered, please try again.")
             return 
         # check alpha -> Right Ascension angle : [0 , 360]
         if alpha < 0 or alpha > 360:
             # error mex
-            error_text = "Invalid value for Right Ascension angle. it must be between 0 and 360°"
-            # visualise error text in add view
-            Label(error_frame_add_view, text=error_text).grid(row=0, column=0, padx=5, pady=5)
+            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
+            return
         # check delta -> Declination angle : [-90 , 90]
         if delta < -90 or delta > 90:
             # error mex
-            error_text = "Invalid value for Right Ascension angle. it must be between 0 and 360°"
-            # visualise error text in add view
-            Label(error_frame_add_view, text=error_text).grid(row=0, column=0, padx=5, pady=5)
+            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
+            return
         
         # all check passed, call prediction
         new_object = [[alpha,delta,u,g,r,i,z],]
@@ -330,16 +344,12 @@ def btn_check_classify(alpha, delta, u, g, r, i, z):
         t_predict.start()
     else:
         # set error text
-        error_text = "Invalid values entered, please try again."
-        # visualise error text in add view
-        Label(error_frame_add_view, text=error_text).grid(row=0, column=0, padx=5, pady=5)
+        error_text_add_view.set("Some values are missing, please enter all values.")
     
 # method that classify the new object passed as parameter and write the classes in the view
 def classify_new_obj(new_obj):
     # text to visualize to notify the work
     classify_text.set(": Working...")
-    classify_label = Label(features_input_frame, textvariable=classify_text)
-    classify_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
     
     # acquire token
     clf_semaphore.acquire()
@@ -348,8 +358,8 @@ def classify_new_obj(new_obj):
         # update classify_label text
         classify_text.set(": " + clf.predict(new_obj))
     else:
-        error_classify_text = "Classifier does not work, please try closing and reopening the program."
-        Label(error_frame_add_view, text=error_classify_text).grid(row=9, column=1, sticky="W", padx=0, pady=5)
+        # set error text
+        error_text_add_view.set("Classifier does not work, please try closing and reopening the program.")
     # release token
     clf_semaphore.release(1)
 
@@ -361,11 +371,13 @@ if __name__ == "__main__":
     # window.configure(background="white")
     
     current_view_to_visualise()
-    
     # at the start one thread make and fit the classifier in background
     t = Thread(target=make_classifier)
     t.start()
-        
+    
+    # at the start open the connection to DB
+    conn.set_parameter_conn(parameter_conn['user'], parameter_conn['password'], parameter_conn['host'] , parameter_conn['database'])
+    
         #window.update_idletasks()
         #window.update()
     # handle the window closing by the user
