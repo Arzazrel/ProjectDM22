@@ -43,7 +43,7 @@ class DB_connect:
                 elif err.errno == connector.errorcode.ER_BAD_DB_ERROR:
                     result['status'] = "ERROR: Database does not exist"
                 else:
-                    result['status'] = err
+                    result['status'] = str(err)
                 return result
     
     # method to close connection
@@ -271,6 +271,11 @@ class DB_connect:
                 cursor.execute(delete_celestial_body, data_vector)
                 # Make sure data is committed to the database
                 self.connection.commit()
+                
+                # check if delete something or not
+                if cursor.rowcount == 0:
+                    result['status'] = "ERROR: deletion failed, please try again."
+                    return result
                 
                 # close cursor
                 cursor.close()

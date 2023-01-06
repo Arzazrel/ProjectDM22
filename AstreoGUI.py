@@ -148,6 +148,9 @@ def current_view_to_visualise():
         btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=lambda: fill_table_by_userid(1))  # userid = 1 is associated to admin, the global celestial bodies have admin as observer_user
         btn_vis_global.grid(row=1, column=0)
         
+        btn_delete = Button(middle_frame, text="Delete celestial body", command=lambda: btn_delete_view(user_info['userid']))
+        btn_delete.grid(row=1, column=1)
+        
         btn_add = Button(middle_frame, text="Add celestial body", command=btn_add_view)
         btn_add.grid(row=0, column=1)
         
@@ -273,7 +276,7 @@ def current_view_to_visualise():
         result_classifier_label = Label(features_input_frame, textvariable=classify_text)
         result_classifier_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
         # botton to add the celestial body to DB
-        btn_add_CB = Button(features_input_frame, text="Add", command=btn_logout_clicked)
+        btn_add_CB = Button(features_input_frame, text="Add", command=lambda: btn_add_celB_clicked(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get(),classify_text.get(),user_info['userid']))
         btn_add_CB.grid(row=10, column=3)
         # botton to return back to user view
         btn_userview = Button(features_input_frame, text="Back", command=btn_user_view)
@@ -291,7 +294,40 @@ def current_view_to_visualise():
 
 # ------------------------------------ start:  ------------------------------------
 # ------------------------------------ end:  ------------------------------------
-   
+
+# method for deleting a celestial body from DB, for delete the global celestial bodies the user must be admin
+# each user can delete only the celestial bodies he added
+def btn_delete_view(userid):
+    # check the userid
+    if userid < 0:
+        error_text_user_view.set("ERROR: the userid passed is incorrect.")
+        return
+    
+    # take id of row selected by user
+    row = my_table.focus()
+    # check if there is a row selected
+    if row == '':
+        error_text_user_view.set("ERROR: there isn't a selected row, please select one and try again.")
+        return
+    if not my_table.exists(row):
+        error_text_user_view.set("ERROR: there isn't a selected row, please select one and try again.")
+    
+    # before clean the error_text
+    error_text_user_view.set("")
+    
+    # take values of the row selected by user
+    values = my_table.item(row,'values')
+    # prepare data for method
+    data = (values[0],values[1],values[2],values[3],values[4],values[5],values[6],values[7],userid)
+    result = conn.delete_celestial_body(data)
+    # check result
+    if result['status'] != "OK":
+        # set error text
+        error_text_user_view.set(result['status'])
+    else:
+        # all it's okay, delete the selected row
+        my_table.delete(row)
+    
 # method that fill the table of the clelestial bodies in DB in according with userid  
 def fill_table_by_userid(userid):
     # download the celestial bodies in the Db with observer_user equal to the parameter userid
@@ -383,6 +419,53 @@ def btn_login_clicked(username, psw):
     else:
         # set error text
         error_text_initial_view.set("Invalid username or psw, please try again.")
+        
+# method to add a new celestial body
+def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
+    # check if the userid is correct
+    if userid < 0:
+        error_text_user_view.set("ERROR: the userid passed is incorrect.")
+        return
+    # check input
+    if predict_class == ": Working..." or predict_class == ":":
+        error_text_add_view.set("ERROR: Before adding a new celestial body predict its class.")
+        return
+    if alpha and delta and u and g and r and i and z:
+        # convert the values
+        try:
+            alpha = float(alpha)
+            delta = float(delta)
+            u = float(u)
+            g = float(g)
+            r = float(r)
+            i = float(i)
+            z = float(z)
+        except ValueError:
+            # set error text
+            error_text_add_view.set("Invalid values entered, please try again.")
+            return 
+        # check alpha -> Right Ascension angle : [0 , 360]
+        if alpha < 0 or alpha > 360:
+            # error mex
+            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
+            return
+        # check delta -> Declination angle : [-90 , 90]
+        if delta < -90 or delta > 90:
+            # error mex
+            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
+            return
+        
+        # prepare data
+        data = (alpha, delta, u, g, r, i, z,predict_class,userid)
+        result = conn.insert_celestial_body(data)
+        # check if there are some error
+        if result['status'] != "OK":
+            # there is an error
+            error_text_add_view.set(result['status'])
+    else:
+        # set error text
+        error_text_add_view.set("Some values are missing, please enter all values.")
+    
     
 # --- methods for change view
 # method for coming back to login/signin view, when the logout button is clicked
@@ -443,6 +526,8 @@ def btn_check_classify(alpha, delta, u, g, r, i, z):
             error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
             return
         
+        # reset error text
+        error_text_add_view.set("")
         # all check passed, call prediction
         new_object = [[alpha,delta,u,g,r,i,z],]
         # one thread perform the predict in background for avoiding that the main thread remains locked 
