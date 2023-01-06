@@ -69,13 +69,3 @@ class Classifier:
     # method that retur if the classifier is ready or not
     def classifier_is_ready(self):
         return self.ready
-
-"""
-# test functionality of functionality
-c1 = Classifier()
-c1.preprocess_ds()
-c1.train_model()
-new_object = [[135.689107,32.494632,23.87882,22.27530,20.39501,19.16573,18.79371],]
-print(c1.predict(new_object))
-print(c1.cross_validation_result())
-"""

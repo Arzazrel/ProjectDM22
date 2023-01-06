@@ -14,7 +14,7 @@ import Classifier as Clf
 import DB_connect as DB_conn
 import hashlib
 
-# ------------------------------------  global values  ------------------------------------
+# ------------------------------------  global var  ------------------------------------
 window = Tk()
 status = {'state' : 'initial' }        #indicate the view to be displayed by the application
     #the different status are:
@@ -75,18 +75,18 @@ def clean_frame_GUI(frame_elem):
 def current_view_to_visualise():
     #print("eseguo current, status è : ",status)
     cleanGUI()
-    if status['state'] == "initial":
+    if status['state'] == "initial":                # -- start: GUI for initial view --
         # create variable for the GUI elements
         explainText = "Welcome to Astreo.\nIf you are already logged in, enter your username and password and press the login button.\nIf you have yet to register, enter your username and password and then press the signin button."
     
         # create the GUI elements and place them 
         # - frame top
         top_frame = Frame(window, width=580, height=180, bg='grey')
-        top_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        top_frame.grid(row=0, column=0, padx=10, pady=20, sticky="nsew")
         top_frame.grid_propagate(False)
         
         explainTextLabel = Label(top_frame, text=explainText)
-        explainTextLabel.grid(row=0, column=0, sticky="W", padx=10, pady=10)
+        explainTextLabel.grid(row=0, column=0, sticky="W", padx=35, pady=40)
         
         # - middle frame
         middle_frame = Frame(window, width=580, height=180, bg='grey')
@@ -112,23 +112,23 @@ def current_view_to_visualise():
         btn_test.grid(row=3,column=2)
         
         # - bottom frame in the login/signin view : contain the error text if occour an error
-        bottom_frame_LS = Frame(window, width=580, height=180, bg='grey')
+        bottom_frame_LS = Frame(window, width=580, height=220, bg='grey')
         bottom_frame_LS.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
         bottom_frame_LS.grid_propagate(False)
         
         error_label_initial_view = Label(bottom_frame_LS, textvariable=error_text_initial_view, bg='grey')
         error_label_initial_view.grid(row=0, column=0, padx=10, pady=10)
-        
-    elif status['state'] == "user_view":
+        # -- end: GUI for initial view --
+    elif status['state'] == "user_view":        # -- start: GUI for user view (table displaying the celestial bodies in the DB) --
         # create variable for the GUI elements
         if user_info.get('username') != None:
-            username = user_info.get('username')
+            username = "user: " + user_info.get('username')
         else:
-            username = "Unknown"
+            username = "user: Unknown"
         # create the GUI elements and place them 
         # - top bar frame : contain username of the logged user and the logout button
         top_bar_frame = Frame(window, width=580, height=40, bg='grey')
-        top_bar_frame.grid(row=0, column=0, padx=10, pady=0, sticky="nsew")
+        top_bar_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         top_bar_frame.grid_propagate(False)
         
         # username label
@@ -137,7 +137,7 @@ def current_view_to_visualise():
         # button
         btn_logout = Button(top_bar_frame, text="Logout", command=btn_logout_clicked)
         btn_logout.grid(row=0, column=1, sticky='e',padx=5, pady=10)
-        btn_logout.pack(side = RIGHT)
+        btn_logout.pack(ipadx=10, ipady=5, side = RIGHT)
         
         # - middle frame : contain buttons to add and display celestial bodies in the DB
         middle_frame = Frame(window, width=580, height=80, bg='grey')
@@ -146,19 +146,19 @@ def current_view_to_visualise():
         
         # buttons
         btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=lambda: fill_table_by_userid(1))  # userid = 1 is associated to admin, the global celestial bodies have admin as observer_user
-        btn_vis_global.grid(row=1, column=0)
+        btn_vis_global.grid(row=1, column=0,padx=10, pady=5)
         
         btn_delete = Button(middle_frame, text="Delete celestial body", command=lambda: btn_delete_view(user_info['userid']))
-        btn_delete.grid(row=1, column=1)
+        btn_delete.grid(row=1, column=1,padx=10, pady=5)
         
         btn_add = Button(middle_frame, text="Add celestial body", command=btn_add_view)
-        btn_add.grid(row=0, column=1)
+        btn_add.grid(row=0, column=1,padx=10, pady=5)
         
         btn_vis_own = Button(middle_frame, text="visualise own list of celestial bodies", command=lambda: fill_table_by_userid(user_info['userid']))
         btn_vis_own.grid(row=1, column=2)
         
         # - table frame : contain the list of celestial bodies
-        table_frame = Frame(window, width=580, height=400, bg='grey')
+        table_frame = Frame(window, width=580, height=390, bg='grey')
         table_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
         table_frame.grid_propagate(False)
         
@@ -167,7 +167,9 @@ def current_view_to_visualise():
         table_scroll.pack(side=RIGHT, fill=Y)
         global my_table
         my_table = ttk.Treeview(table_frame,yscrollcommand=table_scroll.set, xscrollcommand =table_scroll.set)
-        #my_game.pack()
+        s = ttk.Style()
+        s.configure('Treeview', rowheight=35) 
+        #my_table.pack()
         table_scroll.config(command=my_table.yview)
         #table_scroll.config(command=my_game.xview)
         #define columns of the table
@@ -193,16 +195,17 @@ def current_view_to_visualise():
         my_table.heading("Infrared",text="Infrared",anchor=CENTER)
         my_table.heading("Class",text="Class",anchor=CENTER)
         
-        my_table.pack(fill=BOTH)
+        my_table.pack(fill=Y)
         
         # - frame to visualize error mex in add view
-        error_frame_user_view = Frame(window, width=580, height=60, bg='grey')
+        error_frame_user_view = Frame(window, width=580, height=50, bg='grey')
         error_frame_user_view.grid(row=3, column=0, padx=10, pady=5, sticky="nsew")
         error_frame_user_view.grid_propagate(False)
         
         error_label_user_view = Label(error_frame_user_view, textvariable=error_text_user_view, bg='grey')
         error_label_user_view.grid(row=0, column=0, padx=10, pady=10)
-    elif status['state'] == "add_view":
+        # -- end: GUI for user view --
+    elif status['state'] == "add_view":                         # -- start: GUI for add view (insert and classify new celestial bodies)--
         # create variable for the GUI elements
         explainText = "In this screen you can add celestial bodies that you have observed.\nPut the parameters in the corresponding fields.\nPress the classification button to get a prediction of the type of celestial body observed: GALAXY, STAR, QSO.\nPress the add button to save."
         # create the GUI elements and place them 
@@ -270,16 +273,16 @@ def current_view_to_visualise():
         empty_2.grid(row=8, column=0)
         
         # botton to classify the celestial body by classifier (Random Forest)
-        btn_classify = Button(features_input_frame, text="Classify", command=lambda: btn_check_classify(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get()))
+        btn_classify = Button(features_input_frame, text="Classify", width = 15, command=lambda: btn_check_classify(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get()))
         btn_classify.grid(row=9, column=0)
         # label for the result of classifier
         result_classifier_label = Label(features_input_frame, textvariable=classify_text)
         result_classifier_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
         # botton to add the celestial body to DB
-        btn_add_CB = Button(features_input_frame, text="Add", command=lambda: btn_add_celB_clicked(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get(),classify_text.get(),user_info['userid']))
+        btn_add_CB = Button(features_input_frame, text="Add", width = 15, command=lambda: btn_add_celB_clicked(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get(),classify_text.get(),user_info['userid']))
         btn_add_CB.grid(row=10, column=3)
         # botton to return back to user view
-        btn_userview = Button(features_input_frame, text="Back", command=btn_user_view)
+        btn_userview = Button(features_input_frame, text="Back", width = 15, command=btn_user_view)
         btn_userview.grid(row=11, column=3)
         
         # - frame to visualize error mex in add view
@@ -289,11 +292,29 @@ def current_view_to_visualise():
         
         error_label_add_view = Label(error_frame_add_view, textvariable=error_text_add_view, bg='grey')
         error_label_add_view.grid(row=0, column=0, padx=10, pady=10)
-
+        # -- end: GUI for add view --
+        
+# --- methods for change view ---
+# method for coming back to login/signin view, when the logout button is clicked
+def btn_logout_clicked():
+    #update the state
+    status['state'] = "initial"
+    current_view_to_visualise()
+    
+# method for goes to add_view
+def btn_add_view():
+    #update the state
+    status['state'] = "add_view"
+    current_view_to_visualise()
+    
+# method for goes to user_view
+def btn_user_view():
+    #update the state
+    status['state'] = "user_view"
+    current_view_to_visualise()
 # ------------------------------------ end: methods for GUI ------------------------------------
 
-# ------------------------------------ start:  ------------------------------------
-# ------------------------------------ end:  ------------------------------------
+# ------------------------------------ start: operations on celestial bodies and table ------------------------------------
 
 # method for deleting a celestial body from DB, for delete the global celestial bodies the user must be admin
 # each user can delete only the celestial bodies he added
@@ -336,8 +357,12 @@ def fill_table_by_userid(userid):
         error_text_user_view.set("ERROR: the userid passed is incorrect.")
         return
     
+    # set text for alert user
+    error_text_user_view.set("Downloading celestial bodies from DB.")
+    
     result = conn.ret_list_celestial_bodies(userid)
     if result['status'] == "OK":
+        clear_table_CB()
         # check if there are a celestial bodies returned
         if len(result['data']) == 0:
             # there aren't
@@ -355,7 +380,138 @@ def fill_table_by_userid(userid):
     else:
         # error
         error_text_user_view.set(result['status'])
-     
+        
+# method for clear all table
+def clear_table_CB():
+    my_table.delete(*my_table.get_children())
+        
+# method to add a new celestial body
+def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
+    # check if the userid is correct
+    if userid < 0:
+        error_text_user_view.set("ERROR: the userid passed is incorrect.")
+        return
+    # check input
+    if predict_class == ": Working..." or predict_class == ":":
+        error_text_add_view.set("ERROR: Before adding a new celestial body predict its class.")
+        return
+    if alpha and delta and u and g and r and i and z:
+        # convert the values
+        try:
+            alpha = float(alpha)
+            delta = float(delta)
+            u = float(u)
+            g = float(g)
+            r = float(r)
+            i = float(i)
+            z = float(z)
+        except ValueError:
+            # set error text
+            error_text_add_view.set("Invalid values entered, please try again.")
+            return 
+        # check alpha -> Right Ascension angle : [0 , 360]
+        if alpha < 0 or alpha > 360:
+            # error mex
+            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
+            return
+        # check delta -> Declination angle : [-90 , 90]
+        if delta < -90 or delta > 90:
+            # error mex
+            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
+            return
+        
+        # prepare data
+        data = (alpha, delta, u, g, r, i, z,predict_class,userid)
+        result = conn.insert_celestial_body(data)
+        # check if there are some error
+        if result['status'] != "OK":
+            # there is an error
+            error_text_add_view.set(result['status'])
+    else:
+        # set error text
+        error_text_add_view.set("Some values are missing, please enter all values.")
+        
+# ------------------------------------ end: operations on celestial bodies and table ------------------------------------    
+
+# ------------------------------------ start: methods for classifier ------------------------------------
+# method for make and fit the classifier in background
+def make_classifier():
+    # acquire token
+    clf_semaphore.acquire()
+    clf.preprocess_ds()
+    clf.train_model()
+    # release token
+    clf_semaphore.release(1)
+    
+# method for checking the input data of the new celestial body
+def btn_check_classify(alpha, delta, u, g, r, i, z):
+    # check input
+    if alpha and delta and u and g and r and i and z:
+        # convert the values
+        try:
+            alpha = float(alpha)
+            delta = float(delta)
+            u = float(u)
+            g = float(g)
+            r = float(r)
+            i = float(i)
+            z = float(z)
+        except ValueError:
+            # set error text
+            error_text_add_view.set("Invalid values entered, please try again.")
+            return 
+        # check alpha -> Right Ascension angle : [0 , 360]
+        if alpha < 0 or alpha > 360:
+            # error mex
+            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
+            return
+        # check delta -> Declination angle : [-90 , 90]
+        if delta < -90 or delta > 90:
+            # error mex
+            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
+            return
+        
+        # reset error text
+        error_text_add_view.set("")
+        # all check passed, call prediction
+        new_object = [[alpha,delta,u,g,r,i,z],]
+        # one thread perform the predict in background for avoiding that the main thread remains locked 
+        # while waiting for the classifier to be trained or ready
+        t_predict = Thread(target=classify_new_obj,args=(new_object,))
+        t_predict.start()
+    else:
+        # set error text
+        error_text_add_view.set("Some values are missing, please enter all values.")
+    
+# method that classify the new object passed as parameter and write the classes in the view
+def classify_new_obj(new_obj):
+    # text to visualize to notify the work
+    classify_text.set(": Working...")
+    
+    # acquire token
+    clf_semaphore.acquire()
+    # check if classifier is ready for classify
+    if clf.classifier_is_ready():
+        # update classify_label text
+        classify_text.set(": " + clf.predict(new_obj))
+    else:
+        # set error text
+        error_text_add_view.set("Classifier does not work, please try closing and reopening the program.")
+    # release token
+    clf_semaphore.release(1)
+# ------------------------------------ end: methods for classifier ------------------------------------
+
+# ------------------------------------ start: methods interfacing with DB ------------------------------------
+# method for connecting to DB
+def conn_to_DB():
+    # set parameter for connection
+    conn.set_parameter_conn(parameter_conn['user'], parameter_conn['password'], parameter_conn['host'] , parameter_conn['database'])
+    # open connection and verify if there is an error
+    result = conn.open_connect()
+    if result['status'] != 'OK':
+        # visualize error in initial view
+        error_text_initial_view.set(result['status'] + "\nPlease close and reopen the application to try to solve the porblem.")
+ 
 # method executed when the signin button is clicked
 def btn_signin_clicked(username, psw):
     #check input
@@ -420,152 +576,8 @@ def btn_login_clicked(username, psw):
         # set error text
         error_text_initial_view.set("Invalid username or psw, please try again.")
         
-# method to add a new celestial body
-def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
-    # check if the userid is correct
-    if userid < 0:
-        error_text_user_view.set("ERROR: the userid passed is incorrect.")
-        return
-    # check input
-    if predict_class == ": Working..." or predict_class == ":":
-        error_text_add_view.set("ERROR: Before adding a new celestial body predict its class.")
-        return
-    if alpha and delta and u and g and r and i and z:
-        # convert the values
-        try:
-            alpha = float(alpha)
-            delta = float(delta)
-            u = float(u)
-            g = float(g)
-            r = float(r)
-            i = float(i)
-            z = float(z)
-        except ValueError:
-            # set error text
-            error_text_add_view.set("Invalid values entered, please try again.")
-            return 
-        # check alpha -> Right Ascension angle : [0 , 360]
-        if alpha < 0 or alpha > 360:
-            # error mex
-            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
-            return
-        # check delta -> Declination angle : [-90 , 90]
-        if delta < -90 or delta > 90:
-            # error mex
-            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
-            return
-        
-        # prepare data
-        data = (alpha, delta, u, g, r, i, z,predict_class,userid)
-        result = conn.insert_celestial_body(data)
-        # check if there are some error
-        if result['status'] != "OK":
-            # there is an error
-            error_text_add_view.set(result['status'])
-    else:
-        # set error text
-        error_text_add_view.set("Some values are missing, please enter all values.")
-    
-    
-# --- methods for change view
-# method for coming back to login/signin view, when the logout button is clicked
-def btn_logout_clicked():
-    #update the state
-    status['state'] = "initial"
-    current_view_to_visualise()
-    
-# method for goes to add_view
-def btn_add_view():
-    #update the state
-    status['state'] = "add_view"
-    current_view_to_visualise()
-    
-# method for goes to user_view
-def btn_user_view():
-    #update the state
-    status['state'] = "user_view"
-    current_view_to_visualise()
-    
-        
-# ------------------------------------ methods for classifier ------------------------------------
-# method for make and fit the classifier in background
-def make_classifier():
-    # acquire token
-    clf_semaphore.acquire()
-    clf.preprocess_ds()
-    clf.train_model()
-    # release token
-    clf_semaphore.release(1)
-    print("Classificatore trained")
-    
-# method for checking the input data of the new celestial body
-def btn_check_classify(alpha, delta, u, g, r, i, z):
-    # check input
-    if alpha and delta and u and g and r and i and z:
-        # convert the values
-        try:
-            alpha = float(alpha)
-            delta = float(delta)
-            u = float(u)
-            g = float(g)
-            r = float(r)
-            i = float(i)
-            z = float(z)
-        except ValueError:
-            # set error text
-            error_text_add_view.set("Invalid values entered, please try again.")
-            return 
-        # check alpha -> Right Ascension angle : [0 , 360]
-        if alpha < 0 or alpha > 360:
-            # error mex
-            error_text_add_view.set("Invalid value for Right Ascension angle. it must be between 0 and 360°.")
-            return
-        # check delta -> Declination angle : [-90 , 90]
-        if delta < -90 or delta > 90:
-            # error mex
-            error_text_add_view.set("Invalid value for Declination angle. it must be between -90 and 90°.")
-            return
-        
-        # reset error text
-        error_text_add_view.set("")
-        # all check passed, call prediction
-        new_object = [[alpha,delta,u,g,r,i,z],]
-        # one thread perform the predict in background for avoiding that the main thread remains locked 
-        # while waiting for the classifier to be trained or ready
-        t_predict = Thread(target=classify_new_obj,args=(new_object,))
-        t_predict.start()
-    else:
-        # set error text
-        error_text_add_view.set("Some values are missing, please enter all values.")
-    
-# method that classify the new object passed as parameter and write the classes in the view
-def classify_new_obj(new_obj):
-    # text to visualize to notify the work
-    classify_text.set(": Working...")
-    
-    # acquire token
-    clf_semaphore.acquire()
-    # check if classifier is ready for classify
-    if clf.classifier_is_ready():
-        # update classify_label text
-        classify_text.set(": " + clf.predict(new_obj))
-    else:
-        # set error text
-        error_text_add_view.set("Classifier does not work, please try closing and reopening the program.")
-    # release token
-    clf_semaphore.release(1)
-    
-# ------------------------------------ methods interfacing with DB ------------------------------------
-# method for connecting to DB
-def conn_to_DB():
-    # set parameter for connection
-    conn.set_parameter_conn(parameter_conn['user'], parameter_conn['password'], parameter_conn['host'] , parameter_conn['database'])
-    # open connection and verify if there is an error
-    result = conn.open_connect()
-    if result['status'] != 'OK':
-        # visualize error in initial view
-        error_text_initial_view.set(result['status'] + "\nPlease close and reopen the application to try to solve the porblem.")
-        
+# ------------------------------------ end: methods interfacing with DB ------------------------------------
+
 # ------------------------------------ main ------------------------------------        
 if __name__ == "__main__":
     window.title("Astreo")
@@ -581,8 +593,6 @@ if __name__ == "__main__":
     # at the start open the connection to DB
     conn_to_DB()
     
-        #window.update_idletasks()
-        #window.update()
     # handle the window closing by the user
     window.protocol("WM_DELETE_WINDOW", on_closing)
     window.mainloop()

@@ -332,42 +332,6 @@ class DB_connect:
         1 - create new DB_connect object
         2 - set_parameter_conn(user, password, host, database)
         3 - open_connect()
-        4 -
+        4 - to do some operation
+        5 - close_connect()
 """
-"""        
-#file_path = os.path.join(out_dir,'prova.csv') # Join one or more path components intelligently
-file_path = 'dataset\star_classification.csv'
-# test di prova
-c = DB_connect()
-c.set_parameter_conn('Alex', '', '127.0.0.1', 'dm_project_db')
-c.open_connect()
-#c.from_csv_to_DB(file_path)
-#print(c.signin('alex', '')['status'])
-result = c.login('alex', '')
-print("Login status: ", result['status'], " userid: " ,result['data'][0])
-
-userid = 1
-result = c.ret_list_celestial_bodies(userid)
-print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
-#for elem in result['data']:
-#    print("Cel B : ", elem)
-"""
-
-# insert new object
-#new_object = [1,1,1,1,1,1,1,1,userid]
-#result = c.insert_celestial_body(new_object)
-#print("Status insert: ", result['status'])
-#result = c.insert_celestial_body(new_object)
-#print("Status insert: ", result['status'])
-#result = c.ret_list_celestial_bodies(userid)
-#print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
-#for elem in result['data']:
-#    print("Cel B : ", elem)
-# delete new_object
-#result = c.delete_celestial_body(new_object)
-#print("Status delete: ", result['status'])
-#result = c.ret_list_celestial_bodies(userid)
-#print("Status ret_list: ", result['status'], " userid: ", userid, "num righe ottenute: ", len(result['data']))
-#for elem in result['data']:
-#    print("Cel B : ", elem)
-#c.close_connect()
