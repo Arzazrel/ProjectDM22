@@ -47,7 +47,13 @@ error_text_add_view.set('')
 # text that shows the error that occour in the user view
 error_text_user_view = StringVar()
 error_text_user_view.set('')
-
+# -- variable text for menu in GUI
+# setting text for filters menu
+text_filters_menu = StringVar()
+text_filters_menu.set('Filter: none')
+# setting text for class menu
+text_class_menu = StringVar()
+text_class_menu.set('GALAXY')
 # ------------------------------------  methods  ------------------------------------
 
 # ------------------------------------ start: methods for GUI ------------------------------------
@@ -125,6 +131,9 @@ def current_view_to_visualise():
             username = "user: " + user_info.get('username')
         else:
             username = "user: Unknown"
+            
+        filters = ['Filter: none','Filter: galaxy', 'Filter: quasar','Filter: star']
+        
         # create the GUI elements and place them 
         # - top bar frame : contain username of the logged user and the logout button
         top_bar_frame = Frame(window, width=580, height=40, bg='grey')
@@ -145,16 +154,20 @@ def current_view_to_visualise():
         middle_frame.grid_propagate(False)
         
         # buttons
-        btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=lambda: fill_table_by_userid(1))  # userid = 1 is associated to admin, the global celestial bodies have admin as observer_user
+        btn_vis_global = Button(middle_frame, text="Visualise global list of celestial bodies", command=lambda: fill_table_by_userid(1,text_filters_menu.get()))  # userid = 1 is associated to admin, the global celestial bodies have admin as observer_user
         btn_vis_global.grid(row=1, column=0,padx=10, pady=5)
         
         btn_delete = Button(middle_frame, text="Delete celestial body", command=lambda: btn_delete_view(user_info['userid']))
-        btn_delete.grid(row=1, column=1,padx=10, pady=5)
+        btn_delete.grid(row=0, column=2,padx=10, pady=5)
         
         btn_add = Button(middle_frame, text="Add celestial body", command=btn_add_view)
-        btn_add.grid(row=0, column=1,padx=10, pady=5)
+        btn_add.grid(row=0, column=0,padx=10, pady=5)
         
-        btn_vis_own = Button(middle_frame, text="visualise own list of celestial bodies", command=lambda: fill_table_by_userid(user_info['userid']))
+        # creating filter menu
+        filter_menu = OptionMenu(middle_frame, text_filters_menu,*filters)
+        filter_menu.grid(row=1, column=1,padx=10)
+        
+        btn_vis_own = Button(middle_frame, text="visualise own list of celestial bodies", command=lambda: fill_table_by_userid(user_info['userid'],text_filters_menu.get()))
         btn_vis_own.grid(row=1, column=2)
         
         # - table frame : contain the list of celestial bodies
@@ -208,6 +221,8 @@ def current_view_to_visualise():
     elif status['state'] == "add_view":                         # -- start: GUI for add view (insert and classify new celestial bodies)--
         # create variable for the GUI elements
         explainText = "In this screen you can add celestial bodies that you have observed.\nPut the parameters in the corresponding fields.\nPress the classification button to get a prediction of the type of celestial body observed: GALAXY, STAR, QSO.\nPress the add button to save."
+        class_text = ['GALAXY','QSO','STAR']
+        
         # create the GUI elements and place them 
         # - top frame : contain explain text
         top_frame = Frame(window, width=580, height=85, bg='grey')
@@ -278,8 +293,15 @@ def current_view_to_visualise():
         # label for the result of classifier
         result_classifier_label = Label(features_input_frame, textvariable=classify_text)
         result_classifier_label.grid(row=9, column=1, sticky="W", padx=0, pady=5)
+        
+        # The admin when adding a celestial body to the global list must also specify its class
+        if user_info['admin'] == True:
+            # creating menu for select 
+            class_menu = OptionMenu(features_input_frame, text_class_menu,*class_text)
+            class_menu.grid(row=9, column=3,padx=10)
+        
         # botton to add the celestial body to DB
-        btn_add_CB = Button(features_input_frame, text="Add", width = 15, command=lambda: btn_add_celB_clicked(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get(),classify_text.get(),user_info['userid']))
+        btn_add_CB = Button(features_input_frame, text="Add", width = 15, command=lambda: btn_add_celB_clicked(right_ascension_input.get(), declination_angle_input.get(), u_input.get(), g_input.get(), r_input.get(), i_input.get(), z_input.get(),classify_text.get(),text_class_menu.get(),user_info['userid']))
         btn_add_CB.grid(row=10, column=3)
         # botton to return back to user view
         btn_userview = Button(features_input_frame, text="Back", width = 15, command=btn_user_view)
@@ -309,7 +331,9 @@ def btn_add_view():
     
 # method for goes to user_view
 def btn_user_view():
-    #update the state
+    # clean the label for the object classified
+    classify_text.set(':')
+    # update the state
     status['state'] = "user_view"
     current_view_to_visualise()
 # ------------------------------------ end: methods for GUI ------------------------------------
@@ -350,7 +374,7 @@ def btn_delete_view(userid):
         my_table.delete(row)
     
 # method that fill the table of the clelestial bodies in DB in according with userid  
-def fill_table_by_userid(userid):
+def fill_table_by_userid(userid, selected_filter):
     # download the celestial bodies in the Db with observer_user equal to the parameter userid
     # check if the userid is correct
     if userid < 0:
@@ -359,8 +383,16 @@ def fill_table_by_userid(userid):
     
     # set text for alert user
     error_text_user_view.set("Downloading celestial bodies from DB.")
+    # default value
+    selected_class = None
+    if selected_filter == "Filter: galaxy":
+        selected_class = 'GALAXY'
+    elif selected_filter == "Filter: quasar":
+        selected_class = 'QSO'
+    elif selected_filter == "Filter: star":
+        selected_class = 'STAR'
     
-    result = conn.ret_list_celestial_bodies(userid)
+    result = conn.ret_list_celestial_bodies(userid, selected_class)
     if result['status'] == "OK":
         clear_table_CB()
         # check if there are a celestial bodies returned
@@ -386,7 +418,7 @@ def clear_table_CB():
     my_table.delete(*my_table.get_children())
         
 # method to add a new celestial body
-def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
+def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, selected_class, userid):
     # check if the userid is correct
     if userid < 0:
         error_text_user_view.set("ERROR: the userid passed is incorrect.")
@@ -421,7 +453,12 @@ def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
             return
         
         # prepare data
-        data = (alpha, delta, u, g, r, i, z,predict_class,userid)
+        # if user is a user or admin the parameters to be passed change
+        if user_info['admin'] == True:
+            data = (alpha, delta, u, g, r, i, z, selected_class,userid)
+        else:
+            predict_class = predict_class[2:]
+            data = (alpha, delta, u, g, r, i, z,predict_class,userid)
         result = conn.insert_celestial_body(data)
         # check if there are some error
         if result['status'] != "OK":
@@ -435,10 +472,11 @@ def btn_add_celB_clicked(alpha, delta, u, g, r, i, z, predict_class, userid):
 
 # ------------------------------------ start: methods for classifier ------------------------------------
 # method for make and fit the classifier in background
-def make_classifier():
+def make_classifier(dataset):
     # acquire token
     clf_semaphore.acquire()
-    clf.preprocess_ds()
+    #clf.preprocess_ds()
+    clf.set_ds(dataset)
     clf.train_model()
     # release token
     clf_semaphore.release(1)
@@ -557,11 +595,13 @@ def btn_login_clicked(username, psw):
             # save information of user
             user_info['username'] = username
             # result['data'] is in this form (iduser, username, psw, admin)
-            user_info['userid'] = result['data'][0]
             if result['data'][3] == 1:
                 user_info['admin'] = True
+                # in the DB admin operations must be done with userid=1, global bodies will all have observer_user =1
+                user_info['userid'] = 1
             else:
                 user_info['admin'] = False
+                user_info['userid'] = result['data'][0]
                 
             # update the error mex
             error_text_initial_view.set("")
@@ -583,15 +623,23 @@ if __name__ == "__main__":
     window.title("Astreo")
     window.geometry('600x600')
     window.resizable(False, False)
-    # window.configure(background="white")
-    
-    current_view_to_visualise()
-    # at the start one thread make and fit the classifier in background
-    t = Thread(target=make_classifier)
-    t.start()
     
     # at the start open the connection to DB
     conn_to_DB()
+    # download of the dataset for train the model
+    result = conn.ret_list_celestial_bodies(1, None)
+    ds = []
+    # check
+    if result['status'] == "OK":
+        ds = result['data']
+    else:
+        # set error text
+        error_text_user_view.set(result['status'])
+    
+    current_view_to_visualise()
+    # at the start one thread make and fit the classifier in background
+    t = Thread(target=make_classifier,args=(ds,))
+    t.start()
     
     # handle the window closing by the user
     window.protocol("WM_DELETE_WINDOW", on_closing)

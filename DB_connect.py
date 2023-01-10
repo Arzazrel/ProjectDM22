@@ -165,8 +165,8 @@ class DB_connect:
             result['status'] = "ERROR: {}".format(err)
             return result
     
-    # method for return a list of celestial body in according to userid
-    def ret_list_celestial_bodies(self, userid):
+    # method for return a list of celestial body in according to userid and the selected_class if is passed
+    def ret_list_celestial_bodies(self, userid, selected_class):
         # dictionary that contain the result
         result = {}
         try:
@@ -175,8 +175,13 @@ class DB_connect:
                 # open cursor
                 cursor = self.connection.cursor(buffered=True)
     
-                query = ("SELECT alpha, delta, u, g, r, i, z, class as classe FROM celestial_bodies WHERE observer_user = %s")
-                data_query = (userid,)
+                # check if a filter is applied
+                if selected_class != None:
+                    query = ("SELECT alpha, delta, u, g, r, i, z, class as classe FROM celestial_bodies WHERE observer_user = %s AND class = %s")
+                    data_query = (userid,selected_class)
+                else:
+                    query = ("SELECT alpha, delta, u, g, r, i, z, class as classe FROM celestial_bodies WHERE observer_user = %s")
+                    data_query = (userid,)
                 cursor.execute(query, data_query)
                 
                 # check if there is celestial bodies added by userid

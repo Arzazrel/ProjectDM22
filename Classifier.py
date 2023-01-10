@@ -30,13 +30,18 @@ class Classifier:
         dfReduced = dfProc0.drop(columns=['redshift'])
         # remove incorrect sample in position 79545 with values [224.00652611366,-0.624303881323656,-9999,-9999,18.1656,18.01675,-9999,"STAR"] 
         self.df_preprocessed = dfReduced.drop([79543])
+       
+    # method for set the dataset by parameter
+    def set_ds(self, dataset):
+        if len(dataset) != 0:
+            self.df_preprocessed = pd.DataFrame(dataset)    
         
     # method to train the model, to make classifier
     def train_model(self):
         # array of training sample
         X = self.df_preprocessed.iloc[:,[0,1,2,3,4,5,6]]
         # array of target values
-        Y = self.df_preprocessed.loc[:,"class"]
+        Y = self.df_preprocessed.loc[:,7]
         
         # model
         self.classifier = RandomForestClassifier(n_estimators=100)
