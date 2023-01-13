@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Spyder Editor
-
-This is a temporary script file.
+Author: Made by Alessandro Diana
 """
 import numpy as np
 from tkinter import *
