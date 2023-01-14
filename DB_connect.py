@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan  3 14:42:45 2023
-
-@author: Alex
+@author: Alessandro Diana
 
 explanation: file containing the class that manage the connection and the operation with mysql DB
 """

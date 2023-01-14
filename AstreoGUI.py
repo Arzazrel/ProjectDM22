@@ -624,7 +624,7 @@ if __name__ == "__main__":
     
     # at the start open the connection to DB
     conn_to_DB()
-    # download of the dataset for train the model
+    # download of the dataset for train the model, download all celestial bodies added by Admin (userid = 1) without filters
     result = conn.ret_list_celestial_bodies(1, None)
     ds = []
     # check

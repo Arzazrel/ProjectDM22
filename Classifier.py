@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Dec 29 14:28:12 2022
-@author: Alex
+@author: Alessandro Diana
 
 explanation: file containing the class that trains the classifier and predicts the newly added celestial bodies
 """
@@ -19,7 +18,7 @@ class Classifier:
         # var that will contain the preprocessed DS
         self.df_preprocessed = None
         
-    # method for read and preprocessed DS
+    # method for read and preprocessed DS, used in the development and testing phase
     def preprocess_ds(self):
         # read dataset from csv
         df = pd.read_csv('dataset\star_classification.csv')
